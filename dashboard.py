@@ -10,9 +10,11 @@ from tornado.options import define, options
 
 
 define("port", default=8989, help="port number", type=int)
-define("poll_interval", default=1000, help="polling interval to redis", type=int)
+define("poll_interval", default=1000,
+       help="polling interval to redis", type=int)
 define("debug", default=0, help="For debugging in dev", type=int)
-define("static_prefix", default="/static/", help="static contents url", type=str)
+define("static_prefix", default="/static/",
+       help="static contents url", type=str)
 define("url_prefix", default="/rq", help="Url prefix", type=str)
 
 
@@ -32,11 +34,12 @@ def jsonify(f):
 
 
 def json_me(obj):
-	return json.dumps(obj)
+    return json.dumps(obj)
 
 
 def serialize_queues(queues):
     return [dict(name=q.name, count=q.count, url=options.url_prefix + "/" + q.name) for q in queues]
+
 
 class TornadoApplication(tornado.web.Application):
 
@@ -51,10 +54,11 @@ class TornadoApplication(tornado.web.Application):
             (r"/queues.json", ListQueuesHandler),
             (r"/jobs/(.*)/(.*).json", ListJobsHandler),
             (r"/workers.json", ListWorkersHandler),
-            (r"/?([^/]*)/?(.*)/?", OverViewHandler),    
+            (r"/?([^/]*)/?(.*)/?", OverViewHandler),
         ]
         if options.url_prefix:
-            handlers = [((options.url_prefix + handler[0]) if handler[0] != "/?" else (handler[0]), handler[1]) for handler in handlers]
+            handlers = [((options.url_prefix + handler[0]) if handler[0] !=
+                         "/?" else (handler[0]), handler[1]) for handler in handlers]
 
         settings = dict(
             autoescape=None,
@@ -63,31 +67,32 @@ class TornadoApplication(tornado.web.Application):
             template_path=os.path.join(os.path.dirname(__file__), "templates"),
             static_path=os.path.join(os.path.dirname(__file__), "static"),
             static_url_prefix=options.static_prefix,
-        )   
+        )
         tornado.web.Application.__init__(self, handlers, **settings)
 
 
 class HealthHandler(BaseRequestHandler):
-	
-	def get(self):
-		self.finish("RQ Dashboard health check")
+
+    def get(self):
+        self.finish("RQ Dashboard health check")
+
 
 class OverViewHandler(BaseRequestHandler):
-	
+
     def get(self, queue_name=None, page=None):
         if not queue_name:
             queue_name = None
         if not page:
-        	page = 1
+            page = 1
         else:
-        	page = int(page)
+            page = int(page)
         if queue_name is None:
-        	# Show the failed queue by default if it contains any jobs
+            # Show the failed queue by default if it contains any jobs
             failed = Queue('failed')
             if not failed.is_empty():
                 queue = failed
             else:
-                queue = Queue()	
+                queue = Queue()
         else:
             queue = Queue(queue_name)
         self.render('rq_dashboard/dashboard.html',
